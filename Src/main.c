@@ -217,70 +217,40 @@ static void client_socket_thread1(void const * argument) {
 	data1[2]='c';
 	data1[3]='k';
 	int a;
-	//int  accept_sock;
-	//struct sockaddr_in remotehost;
-	//socklen_t sockaddrsize;
-	//struct_client_socket *arg_client_socket;
-	//arg_client_socket = (struct_client_socket*) argument;
-	//remotehost = arg_client_socket->remotehost;
-	//sockaddrsize  = arg_client_socket->sockaddrsize;
-	//accept_sock = arg_client_socket->accept_sock;
+
 	while (1)
 	{
 		a=recv( client_socket01.accept_sock,data, sizeof(data), 0);
-		//while( (recv( accept_sock,data, sizeof(data), 0))==ERR_OK)
-		//{
-			sendto(client_socket01.accept_sock,data1,sizeof(data1),0,(struct sockaddr *)&client_socket01.remotehost, client_socket01.sockaddrsize);
-		//}
-			if(a==0)
-			{
-
-		 close(client_socket01.accept_sock);
-		 memset(&client_socket01, 0 , sizeof(client_socket01));
-		 osThreadTerminate(handle1);
+		sendto(client_socket01.accept_sock,data1,sizeof(data1),0,(struct sockaddr *)&client_socket01.remotehost, client_socket01.sockaddrsize);
+		if(a==0)
+		{
+			close(client_socket01.accept_sock);
+			memset(&client_socket01, 0 , sizeof(client_socket01));
+			osThreadTerminate(handle1);
 			osThreadYield();
-			}
+		}
 	}
 }
 
 static void client_socket_thread2(void const * argument) {
-
 static 	char data[566];
-
-
 	char data1[4];
 	data1[0]='f';
 	data1[1]='u';
 	data1[2]='c';
 	data1[3]='k';
 	int a;
-
-
-
-
-//	int  accept_sock;
-//	struct sockaddr_in remotehost;
-//	socklen_t sockaddrsize;
-//	struct_client_socket *arg_client_socket;
-//	arg_client_socket = (struct_client_socket*) argument;
-//	remotehost = arg_client_socket->remotehost;
-//	sockaddrsize  = arg_client_socket->sockaddrsize;
-//	accept_sock = arg_client_socket->accept_sock;
 	while (1)
 	{
 		a=recv( client_socket02.accept_sock,data, sizeof(data), 0);
-		//while( (recv( accept_sock,data, sizeof(data), 0))==ERR_OK)
-		//{
-			sendto(client_socket02.accept_sock,data1,sizeof(data1),0,(struct sockaddr *)&client_socket02.remotehost, client_socket02.sockaddrsize);
-		//}
-			if(a==0)
-			{
-		 close(client_socket02.accept_sock);
+		sendto(client_socket02.accept_sock,data1,sizeof(data1),0,(struct sockaddr *)&client_socket02.remotehost, client_socket02.sockaddrsize);
+		if(a==0)
+		{
+			close(client_socket02.accept_sock);
 			memset(&client_socket02, 0 , sizeof(client_socket02));
-
-		 osThreadTerminate(handle2);
+			osThreadTerminate(handle2);
 			osThreadYield();
-			}
+		}
 	}
 }
 /* USER CODE END 4 */
@@ -301,63 +271,56 @@ void StartDefaultTask(void const * argument) {
 
 	/* USER CODE BEGIN 5 */
 	int sock, accept_sock;
-	 socklen_t sockaddrsize;
-	  struct sockaddr_in address, remotehost;
-	 if ((sock = socket(AF_INET,SOCK_STREAM, 0)) >= 0)
-	   {
-	     address.sin_family = AF_INET;
-	     address.sin_addr.s_addr = INADDR_ANY;
-	     address.sin_port = htons(80);
-	     if (bind(sock, (struct sockaddr *)&address, sizeof (address)) ==  0)
-	     {
-	     	listen(sock, 2);
-	       for(;;)
-	       {
+	socklen_t sockaddrsize;
+	struct sockaddr_in address, remotehost;
+	if ((sock = socket(AF_INET,SOCK_STREAM, 0)) >= 0)
+	{
+		address.sin_family = AF_INET;
+		address.sin_addr.s_addr = INADDR_ANY;
+		address.sin_port = htons(80);
+		if (bind(sock, (struct sockaddr *)&address, sizeof (address)) ==  0)
+		{
+			listen(sock, 2);
+			for(;;)
+			{
+				accept_sock = accept(sock, (struct sockaddr *)&remotehost, (socklen_t *)&sockaddrsize);
 
+				/* Infinite loop */
+				if(accept_sock == 1 )
+				{
+					client_socket01.accept_sock = accept_sock;
+					client_socket01.remotehost = remotehost;
+	        	 	 client_socket01.sockaddrsize = sockaddrsize;
+	        	 	 handle1 = sys_thread_new("client_socket_thread", (lwip_thread_fn)client_socket_thread1, (void*)&client_socket01, DEFAULT_THREAD_STACKSIZE, osPriorityNormal );
+	        	 	 if (client_socket02.accept_sock == 2)
+	        	 	 {
+	        	 		 close(client_socket02.accept_sock);
+	        	 		 memset(&client_socket02, 0 , sizeof(client_socket02));
+	        	 		 osThreadTerminate(handle2);
+	        	 	 }
+				}
+				if(accept_sock == 2 )
+				{
+					client_socket02.accept_sock = accept_sock;
+					client_socket02.remotehost = remotehost;
+					client_socket02.sockaddrsize = sockaddrsize;
+					handle2 = 	 sys_thread_new("client_socket_thread", (lwip_thread_fn)client_socket_thread2, (void*)&client_socket02, DEFAULT_THREAD_STACKSIZE, osPriorityNormal );
+					if (client_socket01.accept_sock == 1)
+					{
+						close(client_socket01.accept_sock);
+						memset(&client_socket01, 0 , sizeof(client_socket01));
 
-
-	         accept_sock = accept(sock, (struct sockaddr *)&remotehost, (socklen_t *)&sockaddrsize);
-
-	/* Infinite loop */
-	         if(accept_sock == 1 )
-	         {
-	        	 client_socket01.accept_sock = accept_sock;
-	        	 client_socket01.remotehost = remotehost;
-	        	 client_socket01.sockaddrsize = sockaddrsize;
-	        	 handle1 = sys_thread_new("client_socket_thread", (lwip_thread_fn)client_socket_thread1, (void*)&client_socket01, DEFAULT_THREAD_STACKSIZE, osPriorityNormal );
-	        	// if (client_socket02.accept_sock ==2 )
-	        	if (client_socket02.accept_sock == 2)
-	        	 {
-	        		 close(client_socket02.accept_sock);
-		        		memset(&client_socket02, 0 , sizeof(client_socket02));
-
-	        		 osThreadTerminate(handle2);
-	        	 }
-	         }
-
-	         if(accept_sock == 2 )
-	         {
-	        	 client_socket02.accept_sock = accept_sock;
-	        	 client_socket02.remotehost = remotehost;
-	        	 client_socket02.sockaddrsize = sockaddrsize;
-	        	 handle2 = 	 sys_thread_new("client_socket_thread", (lwip_thread_fn)client_socket_thread2, (void*)&client_socket02, DEFAULT_THREAD_STACKSIZE, osPriorityNormal );
-	        	// if (client_socket01.accept_sock ==1 )
-	        	 if (client_socket01.accept_sock == 1)
-	        	 {
-	        		 close(client_socket01.accept_sock);
-	     			memset(&client_socket01, 0 , sizeof(client_socket01));
-
-	        		 osThreadTerminate(handle1);
-	        	 }
-	         }
-	       }
-	            }
-	            else
-	            {
-	              close(sock);
-	              return;
-	            }
-	          }
+						osThreadTerminate(handle1);
+					}
+				}
+			}
+		}
+		else
+		{
+			close(sock);
+			return;
+		}
+	}
 	/* USER CODE END 5 */
 }
 
